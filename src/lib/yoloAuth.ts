@@ -43,18 +43,28 @@ export async function yoloLogin(email: string): Promise<void> {
     );
   }
 
-  const json = (await res.json().catch(() => ({}))) as {
+  const raw = await res.text();
+  let json: {
     error?: string;
+    message?: string;
+    msg?: string;
     access_token?: string;
     refresh_token?: string;
-  };
+  } = {};
+  try {
+    json = raw ? (JSON.parse(raw) as typeof json) : {};
+  } catch {
+    /* risposta non JSON (es. HTML da proxy) */
+  }
 
   if (!res.ok) {
-    const msg =
-      typeof json.error === "string" && json.error.length > 0
-        ? json.error
-        : "Accesso non riuscito";
-    throw new Error(msg);
+    const fromBody =
+      [json.error, json.message, json.msg].find(
+        (s): s is string => typeof s === "string" && s.length > 0,
+      ) ?? (raw.trim() && raw.length < 400 ? raw.trim() : null);
+    throw new Error(
+      fromBody ?? `Errore dal server (${res.status}). Controlla i log della funzione yolo-login su Supabase.`,
+    );
   }
 
   const { access_token, refresh_token } = json;
