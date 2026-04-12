@@ -276,7 +276,7 @@ export function SurveyPage({ userId }: { userId: string | null }) {
     setBusy(true);
     setError(null);
 
-    const { data: rpcOk, error: rpcErr } = await supabase.rpc(
+    const { error: rpcErr } = await supabase.rpc(
       "remove_one_suggestion_vote",
       { p_suggestion_id: suggestionId }
     );
