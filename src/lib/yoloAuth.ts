@@ -1,14 +1,15 @@
 import { supabase } from "@/lib/supabase";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
 /**
  * Login istantaneo via Edge Function `yolo-login`.
- * Richiede `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` in `.env` / `.env.local`.
+ * Richiede `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` in `.env` / `.env.local`
+ * (senza spazi dopo `=`).
  */
 export async function yoloLogin(email: string): Promise<void> {
-  if (!url?.trim() || !anonKey?.trim()) {
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? "";
+
+  if (!url || !anonKey) {
     throw new Error(
       "Manca la configurazione Supabase (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)."
     );
@@ -17,15 +18,22 @@ export async function yoloLogin(email: string): Promise<void> {
   const endpoint = `${url.replace(/\/$/, "")}/functions/v1/yolo-login`;
   const normalized = email.trim().toLowerCase();
 
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
-    },
-    body: JSON.stringify({ email: normalized }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${anonKey}`,
+        apikey: anonKey,
+      },
+      body: JSON.stringify({ email: normalized }),
+    });
+  } catch {
+    throw new Error(
+      "Connessione al server fallita. Controlla VITE_SUPABASE_URL (niente spazi dopo =), la rete e che la funzione yolo-login sia deployata su Supabase."
+    );
+  }
 
   const json = (await res.json().catch(() => ({}))) as {
     error?: string;
