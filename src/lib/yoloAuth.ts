@@ -1,25 +1,24 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * URL base per chiamare le Edge Functions senza CORS:
- * - dev / preview Vite: proxy `vite.config` → `/__supabase`
- * - produzione (es. Vercel): rewrite `vercel.json` → `/supabase-proxy`
- * - altrimenti: URL diretto (solo se il browser può parlare con Supabase)
+ * Base URL per `/functions/v1/...`:
+ * - in locale (dev o preview su localhost) il proxy Vite evita CORS;
+ * - in produzione si usa l’URL Supabase diretto (la Edge Function risponde con CORS).
  */
 function supabaseOriginForRequests(): string {
   const url = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
   if (typeof window === "undefined") {
     return url.replace(/\/$/, "");
   }
-  const origin = window.location.origin;
-  if (import.meta.env.DEV) {
-    return `${origin}/__supabase`;
-  }
   const { hostname } = window.location;
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return `${origin}/__supabase`;
+  const local =
+    import.meta.env.DEV ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1";
+  if (local) {
+    return `${window.location.origin}/__supabase`;
   }
-  return `${origin}/supabase-proxy`;
+  return url.replace(/\/$/, "");
 }
 
 /**
@@ -52,7 +51,7 @@ export async function yoloLogin(email: string): Promise<void> {
     });
   } catch {
     throw new Error(
-      "Connessione al server fallita. Verifica che la Edge Function yolo-login sia deployata su Supabase, che su Vercel sia stato fatto redeploy dopo aver aggiunto vercel.json, e le variabili VITE_SUPABASE_* (senza spazi dopo =)."
+      "Connessione a Supabase fallita. Controlla VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY su Vercel, che la funzione yolo-login sia deployata e che non ci siano spazi dopo = nel .env."
     );
   }
 
