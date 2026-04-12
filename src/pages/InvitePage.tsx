@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PENDING_INVITE_TOKEN_KEY, supabase } from "@/lib/supabase";
+import { yoloLogin } from "@/lib/yoloAuth";
 
 type ValidatePayload = {
   valid?: boolean;
@@ -15,7 +16,7 @@ export function InvitePage() {
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -49,7 +50,7 @@ export function InvitePage() {
     })();
   }, [token]);
 
-  async function handleSendLink(e: React.FormEvent) {
+  async function handleEnter(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const trimmed = email.trim().toLowerCase();
@@ -57,17 +58,15 @@ export function InvitePage() {
       setError("Per questo invito devi usare l'email indicata dall'admin.");
       return;
     }
-    const redirect =
-      typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
-    const { error: signError } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: { emailRedirectTo: redirect },
-    });
-    if (signError) {
-      setError(signError.message);
-      return;
+    setBusy(true);
+    try {
+      await yoloLogin(trimmed);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Accesso non riuscito");
+    } finally {
+      setBusy(false);
     }
-    setSent(true);
   }
 
   if (loading) {
@@ -104,11 +103,12 @@ export function InvitePage() {
         Sei invitata al club
       </h1>
       <p className="mt-2 text-sm text-ink-muted">
-        Inserisci la tua email per ricevere il magic link. Dopo il primo accesso
-        il profilo viene creato automaticamente.
+        Inserisci la tua email (deve essere in whitelist). Entrerai subito senza
+        mail di verifica; dopo il primo accesso il profilo viene creato come
+        al solito.
       </p>
 
-      <form onSubmit={(e) => void handleSendLink(e)} className="mt-8 space-y-4">
+      <form onSubmit={(e) => void handleEnter(e)} className="mt-8 space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-ink">
             Email
@@ -125,18 +125,14 @@ export function InvitePage() {
         </div>
         <button
           type="submit"
-          className="w-full rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-dark"
+          disabled={busy}
+          className="w-full rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-dark disabled:opacity-60"
         >
-          Invia magic link
+          {busy ? "Accesso…" : "Entra nel club"}
         </button>
       </form>
 
       {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
-      {sent ? (
-        <p className="mt-4 text-sm text-ink-muted">
-          Controlla la posta e clicca il link. Poi potrai usare il club.
-        </p>
-      ) : null}
 
       <button
         type="button"

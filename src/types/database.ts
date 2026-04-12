@@ -39,6 +39,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      allowed_emails: {
+        Row: {
+          id: string;
+          email: string;
+          name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          name?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       books: {
         Row: {
           id: string;

@@ -1,37 +1,27 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { useLocation, useNavigate } from "react-router-dom";
+import { yoloLogin } from "@/lib/yoloAuth";
 
 export function LoginPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const from = (location.state as { from?: string } | null)?.from ?? "/";
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
     setMessage(null);
-    const redirect =
-      typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: redirect,
-      },
-    });
-    if (error) {
+    try {
+      await yoloLogin(email);
+      setStatus("idle");
+      navigate(from, { replace: true });
+    } catch (err) {
       setStatus("error");
-      setMessage(error.message);
-      return;
+      setMessage(err instanceof Error ? err.message : "Accesso non riuscito");
     }
-    setStatus("sent");
-    setMessage(
-      "Controlla la posta: ti abbiamo inviato il link per entrare. Se non arriva, verifica anche lo spam."
-    );
   }
 
   return (
@@ -40,11 +30,8 @@ export function LoginPage() {
         Bentornata
       </h1>
       <p className="mt-2 text-sm text-ink-muted">
-        Accesso solo su invito. Inserisci l&apos;email che ha usato l&apos;admin
-        per il club: riceverai un magic link.
-      </p>
-      <p className="mt-2 text-sm text-ink-muted">
-        Hai ricevuto il link dal magic link? Controlla anche lo spam.
+        Modalità semplice: inserisci l&apos;email autorizzata per il club e
+        entri subito, senza mail di verifica.
       </p>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 space-y-4">
@@ -69,7 +56,7 @@ export function LoginPage() {
           disabled={status === "sending"}
           className="w-full rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-dark disabled:opacity-60"
         >
-          {status === "sending" ? "Invio in corso…" : "Invia magic link"}
+          {status === "sending" ? "Accesso…" : "Entra"}
         </button>
       </form>
 
@@ -78,13 +65,6 @@ export function LoginPage() {
           className={`mt-4 text-sm ${status === "error" ? "text-red-700" : "text-ink-muted"}`}
         >
           {message}
-        </p>
-      ) : null}
-
-      {status === "sent" ? (
-        <p className="mt-6 text-center text-sm text-ink-muted">
-          Dopo aver cliccato il link tornerai a:{" "}
-          <span className="font-medium text-ink">{from}</span>
         </p>
       ) : null}
     </div>
