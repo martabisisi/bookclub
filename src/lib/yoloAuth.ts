@@ -1,21 +1,29 @@
 import { supabase } from "@/lib/supabase";
 
+/** Base URL Supabase: in dev usa il proxy Vite (`/__supabase`) per evitare CORS verso le Edge Functions. */
+function supabaseOriginForRequests(): string {
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    return `${window.location.origin}/__supabase`;
+  }
+  return url.replace(/\/$/, "");
+}
+
 /**
  * Login istantaneo via Edge Function `yolo-login`.
  * Richiede `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` in `.env` / `.env.local`
  * (senza spazi dopo `=`).
  */
 export async function yoloLogin(email: string): Promise<void> {
-  const url = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? "";
 
-  if (!url || !anonKey) {
+  if (!import.meta.env.VITE_SUPABASE_URL?.trim() || !anonKey) {
     throw new Error(
       "Manca la configurazione Supabase (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)."
     );
   }
 
-  const endpoint = `${url.replace(/\/$/, "")}/functions/v1/yolo-login`;
+  const endpoint = `${supabaseOriginForRequests()}/functions/v1/yolo-login`;
   const normalized = email.trim().toLowerCase();
 
   let res: Response;
