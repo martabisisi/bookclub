@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette tipo Goodreads: beige caldo + verde salvia */
+  --color-parchment: #f4f0e6;
+  --color-parchment-dark: #e6dfd0;
+  --color-sage: #6f7f63;
+  --color-sage-light: #8f9f82;
+  --color-sage-dark: #4a5540;
+  --color-sage-ink: #2f3629;
+  --color-ink: #2a261f;
+  --color-ink-muted: #5e594f;
+  --color-cocoa: #6b5344;
+  --color-card: #fffdf7;
+  --color-card-border: #ddd4c4;
+
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Libre Baskerville", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+}
