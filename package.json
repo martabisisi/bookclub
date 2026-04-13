@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:yolo-login": "supabase functions deploy yolo-login --no-verify-jwt --project-ref juaciwfabdetgwoaqzh"
+    "deploy:yolo-login": "supabase functions deploy yolo-login --no-verify-jwt --project-ref juaciwfabdetgwoaqzh",
+    "test:yolo-login": "node scripts/test-yolo-login.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
