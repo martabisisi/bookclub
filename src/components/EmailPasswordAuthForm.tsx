@@ -1,14 +1,28 @@
 import { useEffect, useState } from "react";
-import type { AuthError } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 const inputClass =
   "mt-1 w-full rounded-lg border border-card-border bg-card px-3 py-2 text-ink shadow-inner outline-none ring-sage focus:ring-2";
 const btnClass =
   "w-full rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-dark disabled:opacity-60";
 
-function mapAuthError(err: AuthError): string {
-  const msg = err.message.toLowerCase();
+function mapAuthError(err: unknown): string {
+  const text =
+    err && typeof err === "object" && "message" in err
+      ? String((err as { message: string }).message)
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  const msg = text.toLowerCase();
+
+  if (
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed") ||
+    msg.includes("network request failed")
+  ) {
+    return "Il browser non riesce a raggiungere Supabase. Controlla: (1) in .env.local, VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY senza spazio dopo =; (2) su Vercel le stesse variabili in Settings → Environment Variables e un redeploy; (3) dopo aver modificato .env, riavvia npm run dev.";
+  }
   if (msg.includes("invalid login credentials")) {
     return "Email o password non corretti.";
   }
@@ -21,7 +35,7 @@ function mapAuthError(err: AuthError): string {
   if (msg.includes("password")) {
     return "La password non rispetta i requisiti (minimo 6 caratteri).";
   }
-  return err.message;
+  return text;
 }
 
 type Props = {
@@ -88,14 +102,23 @@ export function EmailPasswordAuthForm({
         "Ti abbiamo inviato un’email di conferma. Apri il link, poi torna qui e accedi."
       );
     } catch (err) {
-      setMessage(mapAuthError(err as AuthError));
+      setMessage(mapAuthError(err));
     } finally {
       setBusy(false);
     }
   }
 
+  const configOk = isSupabaseConfigured();
+
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+      {!configOk ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          Manca la configurazione Supabase (URL deve iniziare con https:// e serve
+          la chiave anon). Imposta VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY,
+          poi riavvia il dev server.
+        </p>
+      ) : null}
       <div className="flex gap-2 rounded-xl border border-card-border bg-parchment-dark/30 p-1 text-sm">
         <button
           type="button"
@@ -163,7 +186,7 @@ export function EmailPasswordAuthForm({
           placeholder="Almeno 6 caratteri"
         />
       </div>
-      <button type="submit" disabled={busy} className={btnClass}>
+      <button type="submit" disabled={busy || !configOk} className={btnClass}>
         {busy
           ? "…"
           : mode === "signin"

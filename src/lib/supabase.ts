@@ -10,6 +10,13 @@ if (!url || !anonKey) {
   );
 }
 
+/** True se il client può chiamare Supabase (utile per messaggi in UI). */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    url.startsWith("https://") && anonKey.length > 20
+  );
+}
+
 export const supabase = createClient<Database>(url, anonKey);
 
 export const PENDING_INVITE_TOKEN_KEY = "bookclub_pending_invite_token";
