@@ -55,8 +55,8 @@ export function AdminInvitesPage() {
           Inviti al club
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Genera un link personale. Opzionale: blocca l&apos;invito a una email
-          specifica (l&apos;amica dovrà usare quella per il magic link).
+          Genera un link personale. Opzionale: vincola l&apos;invito a una email
+          (dovrà usare quell&apos;indirizzo per registrarsi o accedere).
         </p>
       </div>
 
@@ -101,8 +101,9 @@ export function AdminInvitesPage() {
       </div>
 
       <p className="text-xs text-ink-muted">
-        Ricorda: in Supabase disattiva le registrazioni pubbliche e usa solo
-        utenti invitati / magic link, così il club resta privato.
+        Chi conosce l&apos;URL può registrarsi da solo dalla pagina login; gli
+        inviti servono solo a condividere un link comodo e opzionalmente
+        vincolare l&apos;email.
       </p>
     </div>
   );
