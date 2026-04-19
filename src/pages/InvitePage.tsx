@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { formatSupabaseAuthError } from "@/lib/authErrors";
 import { PENDING_INVITE_TOKEN_KEY, supabase } from "@/lib/supabase";
 
 type ValidatePayload = {
@@ -29,7 +30,7 @@ export function InvitePage() {
         p_token: token,
       });
       if (rpcError) {
-        setError(rpcError.message);
+        setError(formatSupabaseAuthError(rpcError.message));
         setValid(false);
         setLoading(false);
         return;
@@ -64,7 +65,7 @@ export function InvitePage() {
       options: { emailRedirectTo: redirect },
     });
     if (signError) {
-      setError(signError.message);
+      setError(formatSupabaseAuthError(signError.message));
       return;
     }
     setSent(true);

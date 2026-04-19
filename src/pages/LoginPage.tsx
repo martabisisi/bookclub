@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { formatSupabaseAuthError } from "@/lib/authErrors";
 import { supabase } from "@/lib/supabase";
 
 export function LoginPage() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const missingEnv =
+    !import.meta.env.VITE_SUPABASE_URL?.trim() ||
+    !import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
@@ -25,7 +29,7 @@ export function LoginPage() {
     });
     if (error) {
       setStatus("error");
-      setMessage(error.message);
+      setMessage(formatSupabaseAuthError(error.message));
       return;
     }
     setStatus("sent");
@@ -47,6 +51,13 @@ export function LoginPage() {
         Controlla anche lo spam se non vedi nulla.
       </p>
 
+      {missingEnv ? (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          Manca la configurazione: imposta VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+          in .env.local (nessuno spazio dopo =), poi riavvia il server di sviluppo.
+        </p>
+      ) : null}
+
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-ink">
@@ -66,7 +77,7 @@ export function LoginPage() {
         </div>
         <button
           type="submit"
-          disabled={status === "sending"}
+          disabled={status === "sending" || missingEnv}
           className="w-full rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage-dark disabled:opacity-60"
         >
           {status === "sending" ? "Invio in corso…" : "Invia magic link"}
