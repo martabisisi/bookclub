@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { errorMessage } from "@/lib/errorMessage";
 import { supabase } from "@/lib/supabase";
 
 export function AddBookPage() {
@@ -74,7 +75,7 @@ export function AddBookPage() {
 
       void navigate(`/libri/${book.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore sconosciuto");
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }

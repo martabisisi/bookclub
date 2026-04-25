@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { errorMessage } from "@/lib/errorMessage";
 import { toDateInputValue } from "@/lib/toDateInputValue";
 import type { Book } from "@/types/database";
 
@@ -17,6 +18,45 @@ export function EditBookPage() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    if (!id || !book) return;
+    if (
+      !window.confirm(
+        `Eliminare definitivamente "${book.title}"? Questa azione non si può annullare.`
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      // Best-effort: elimina eventuali file copertina in storage
+      const { data: files, error: listErr } = await supabase.storage
+        .from("covers")
+        .list(id, { limit: 100 });
+      if (listErr) throw listErr;
+      const paths = (files ?? [])
+        .filter((f) => f.name)
+        .map((f) => `${id}/${f.name}`);
+      if (paths.length) {
+        const { error: rmErr } = await supabase.storage
+          .from("covers")
+          .remove(paths);
+        if (rmErr) throw rmErr;
+      }
+
+      const { error: delErr } = await supabase.from("books").delete().eq("id", id);
+      if (delErr) throw delErr;
+
+      void navigate("/", { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!id) {
@@ -93,7 +133,7 @@ export function EditBookPage() {
 
       void navigate(`/libri/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore sconosciuto");
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -228,6 +268,17 @@ export function EditBookPage() {
         >
           {busy ? "Salvataggio…" : "Salva modifiche"}
         </button>
+
+        <div className="pt-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleDelete()}
+            className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-60"
+          >
+            Elimina libro
+          </button>
+        </div>
       </form>
     </div>
   );

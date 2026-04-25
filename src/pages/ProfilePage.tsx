@@ -228,28 +228,37 @@ export function ProfilePage({ myUserId }: ProfilePageProps) {
             myRatings={myRatings}
             userId={profile.user_id}
             onVoteSaved={(bookId, rating) => {
-              setMyRatings((prev) => new Map(prev).set(bookId, rating));
-              setReadBooks((prev) => {
-                const book = allBooks.find((b) => b.id === bookId);
-                if (!book) return prev;
-                const idx = prev.findIndex((x) => x.id === bookId);
-                const entry: BookWithRating = { ...book, rating };
-                if (idx >= 0) {
-                  const next = [...prev];
-                  next[idx] = entry;
-                  next.sort(
+              if (rating) {
+                setMyRatings((prev) => new Map(prev).set(bookId, rating));
+                setReadBooks((prev) => {
+                  const book = allBooks.find((b) => b.id === bookId);
+                  if (!book) return prev;
+                  const idx = prev.findIndex((x) => x.id === bookId);
+                  const entry: BookWithRating = { ...book, rating };
+                  if (idx >= 0) {
+                    const next = [...prev];
+                    next[idx] = entry;
+                    next.sort(
+                      (a, b) =>
+                        new Date(b.rating.created_at).getTime() -
+                        new Date(a.rating.created_at).getTime()
+                    );
+                    return next;
+                  }
+                  return [entry, ...prev].sort(
                     (a, b) =>
                       new Date(b.rating.created_at).getTime() -
                       new Date(a.rating.created_at).getTime()
                   );
+                });
+              } else {
+                setMyRatings((prev) => {
+                  const next = new Map(prev);
+                  next.delete(bookId);
                   return next;
-                }
-                return [entry, ...prev].sort(
-                  (a, b) =>
-                    new Date(b.rating.created_at).getTime() -
-                    new Date(a.rating.created_at).getTime()
-                );
-              });
+                });
+                setReadBooks((prev) => prev.filter((x) => x.id !== bookId));
+              }
             }}
           />
           <ProfileBasicsEditor
@@ -391,7 +400,7 @@ type AllBooksVoteProps = {
   books: Book[];
   myRatings: Map<string, Rating>;
   userId: string;
-  onVoteSaved: (bookId: string, rating: Rating) => void;
+  onVoteSaved: (bookId: string, rating: Rating | null) => void;
 };
 
 function AllBooksVoteSection({
@@ -428,8 +437,8 @@ function AllBooksVoteSection({
         Voti e commenti
       </h2>
       <p className="text-sm text-ink-muted">
-        Per ogni libro puoi impostare o cambiare stelle e commento in
-        qualsiasi momento.
+        Per ogni libro puoi impostare, cambiare, oppure togliere stelle e
+        commento in qualsiasi momento.
       </p>
       <ul className="space-y-6">
         {sorted.map((b) => (
@@ -451,7 +460,7 @@ type RateFormProps = {
   book: Book;
   userId: string;
   existingRating: Rating | null;
-  onSaved: (bookId: string, rating: Rating) => void;
+  onSaved: (bookId: string, rating: Rating | null) => void;
 };
 
 const STAR_STEPS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5] as const;
@@ -471,6 +480,9 @@ function RateBookForm({ book, userId, existingRating, onSaved }: RateFormProps) 
   useEffect(() => {
     setErr(null);
     setOkMsg(null);
+  }, [book.id]);
+
+  useEffect(() => {
     if (existingRating) {
       setStars(Number(existingRating.stars));
       setComment(existingRating.comment ?? "");
@@ -508,6 +520,32 @@ function RateBookForm({ book, userId, existingRating, onSaved }: RateFormProps) 
     }
   }
 
+  async function removeVote() {
+    if (!existingRating) return;
+    if (
+      !window.confirm(
+        "Rimuovere del tutto il voto e il commento per questo libro?"
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    setErr(null);
+    setOkMsg(null);
+    const { error } = await supabase
+      .from("ratings")
+      .delete()
+      .eq("book_id", book.id)
+      .eq("user_id", userId);
+    setSaving(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    onSaved(book.id, null);
+    setOkMsg("Voto rimosso.");
+  }
+
   const isEdit = Boolean(existingRating);
 
   return (
@@ -526,7 +564,7 @@ function RateBookForm({ book, userId, existingRating, onSaved }: RateFormProps) 
           <p className="text-xs text-ink-muted">{book.author}</p>
           <p className="mt-1 text-xs text-ink-muted">
             {isEdit
-              ? "Hai già votato questo libro — puoi aggiornare quando vuoi."
+              ? "Hai votato — puoi aggiornare o rimuovere il voto in basso."
               : "Non hai ancora votato questo libro."}
           </p>
         </div>
@@ -557,18 +595,30 @@ function RateBookForm({ book, userId, existingRating, onSaved }: RateFormProps) 
         className="mt-1 w-full rounded-lg border border-card-border bg-parchment px-3 py-2 text-sm text-ink outline-none ring-sage focus:ring-2"
         placeholder="Cosa ti è piaciuto (o no)?"
       />
-      <button
-        type="button"
-        disabled={saving}
-        onClick={() => void submit()}
-        className="mt-3 rounded-xl bg-cocoa px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
-      >
-        {saving
-          ? "Salvataggio…"
-          : isEdit
-            ? "Salva modifiche"
-            : "Pubblica voto"}
-      </button>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => void submit()}
+          className="rounded-xl bg-cocoa px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+        >
+          {saving
+            ? "Salvataggio…"
+            : isEdit
+              ? "Salva modifiche"
+              : "Pubblica voto"}
+        </button>
+        {isEdit ? (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void removeVote()}
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-60"
+          >
+            Rimuovi voto
+          </button>
+        ) : null}
+      </div>
       {okMsg ? (
         <p className="mt-2 text-sm text-sage-dark">{okMsg}</p>
       ) : null}
