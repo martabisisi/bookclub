@@ -4,7 +4,6 @@ import { BookListCard } from "@/components/BookListCard";
 import { BookCover } from "@/components/BookCover";
 import { MemberReadingStatus } from "@/components/MemberReadingStatus";
 import { StarDisplay } from "@/components/StarDisplay";
-import { formatMeetingDate } from "@/lib/formatMeetingDate";
 import { supabase } from "@/lib/supabase";
 import type { Book, Profile, ReadingProgress } from "@/types/database";
 
@@ -156,11 +155,6 @@ export function HomePage({ isAdmin }: HomePageProps) {
     return profiles.every((p) => currentBookRatingsByUserId.has(p.user_id));
   }, [profiles, currentBookRatingsByUserId]);
 
-  const currentMeetingLabel = useMemo(
-    () => formatMeetingDate(currentBook?.meeting_date),
-    [currentBook?.meeting_date]
-  );
-
   if (loading) {
     return (
       <div className="text-center text-ink-muted">Caricamento libri…</div>
@@ -212,12 +206,6 @@ export function HomePage({ isAdmin }: HomePageProps) {
                     <p className="text-sm text-ink-muted">
                       {currentBook.author}
                     </p>
-                    {currentMeetingLabel ? (
-                      <p className="mt-1.5 text-sm text-sage-dark">
-                        <span className="text-ink-muted">Incontro: </span>
-                        {currentMeetingLabel}
-                      </p>
-                    ) : null}
                     {profiles.length > 0 ? (
                       allMembersHaveVotedForCurrent &&
                       currentBookVoteAverage != null ? (
@@ -251,7 +239,7 @@ export function HomePage({ isAdmin }: HomePageProps) {
                       )
                     ) : null}
                   </div>
-                  <span className="shrink-0 rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">
+                  <span className="shrink-0 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-red-700">
                     Stiamo leggendo
                   </span>
                 </div>

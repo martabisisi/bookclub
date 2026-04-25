@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
 import { supabase } from "@/lib/supabase";
+import { formatMeetingDate } from "@/lib/formatMeetingDate";
 import type { Book, Profile, Rating } from "@/types/database";
 
 type Row = Rating & { profile?: Pick<Profile, "nome" | "slug"> | null };
@@ -30,7 +31,6 @@ export function BookPage({ isAdmin = false }: BookPageProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [meetingDate, setMeetingDate] = useState<string>("")
 
   useEffect(() => {
     if (!id) {
@@ -52,7 +52,6 @@ export function BookPage({ isAdmin = false }: BookPageProps) {
         return;
       }
       setBook(b);
-      setMeetingDate(b.meeting_date || "");
 
       const [{ data: r, error: rErr }, { data: p, error: pErr }] =
         await Promise.all([
@@ -86,17 +85,7 @@ export function BookPage({ isAdmin = false }: BookPageProps) {
     return sum / ratings.length;
   }, [ratings]);
 
-  // ← INCOLLA LA FUNZIONE QUI
-async function handleUpdateMeetingDate() {
-  if (!isAdmin ||!book) return
-  const { error } = await supabase
-   .from("books")
-   .update({ meeting_date: meetingDate || null })
-   .eq("id", book.id)
-  if (error) {
-    setError("Errore salvataggio data incontro")
-  }
-}
+  const meetingLabel = book ? formatMeetingDate(book.meeting_date) : null;
 
   if (loading) {
     return <p className="text-ink-muted">Caricamento…</p>;
@@ -142,6 +131,12 @@ async function handleUpdateMeetingDate() {
               {book.title}
             </h1>
             <p className="mt-1 text-lg text-ink-muted">{book.author}</p>
+            {meetingLabel ? (
+              <p className="mt-2 text-sm text-ink">
+                <span className="text-ink-muted">Incontro del club: </span>
+                {meetingLabel}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-col items-center gap-2 sm:items-start">
             <p className="text-sm font-medium uppercase tracking-wide text-ink-muted">
@@ -159,24 +154,6 @@ async function handleUpdateMeetingDate() {
           </div>
         </div>
       </div>
-
-      {isAdmin && (
-  <div className="space-y-2 rounded-xl border border-card-border bg-card p-4">
-    <label className="text-sm font-medium text-ink">
-      📅 Data incontro club
-    </label>
-    <input
-      type="date"
-      className="w-full rounded-lg border border-card-border px-3 py-2 text-ink focus:border-sage focus:outline-none"
-      value={meetingDate}
-      onChange={(e) => setMeetingDate(e.target.value)}
-      onBlur={() => void handleUpdateMeetingDate()}
-    />
-    <p className="text-xs text-ink-muted">
-      Imposta quando vi incontrate per discutere questo libro
-    </p>
-  </div>
-)}
 
       <section>
         <h2 className="font-display text-xl font-semibold text-ink">

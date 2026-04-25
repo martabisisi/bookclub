@@ -9,6 +9,7 @@ export function AddBookPage() {
   const [totalPages, setTotalPages] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [setAsCurrent, setSetAsCurrent] = useState(false);
+  const [meetingDate, setMeetingDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +48,7 @@ export function AddBookPage() {
           cover_url: null,
           is_current_book: setAsCurrent,
           created_by: userData.user.id,
+          meeting_date: meetingDate || null,
         })
         .select()
         .single();
@@ -153,6 +155,24 @@ export function AddBookPage() {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="mt-1 block w-full text-sm text-ink-muted file:mr-3 file:rounded-lg file:border-0 file:bg-sage file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-sage-dark"
           />
+        </div>
+        <div>
+          <label
+            htmlFor="meeting"
+            className="block text-sm font-medium text-ink"
+          >
+            Data incontro del club
+          </label>
+          <input
+            id="meeting"
+            type="date"
+            value={meetingDate}
+            onChange={(e) => setMeetingDate(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-card-border bg-parchment px-3 py-2 text-ink outline-none ring-sage focus:ring-2"
+          />
+          <p className="mt-1 text-xs text-ink-muted">
+            Quando discuterete del libro (opzionale).
+          </p>
         </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
           <input

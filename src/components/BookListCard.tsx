@@ -48,11 +48,21 @@ export function BookListCard({
                 </h2>
                 <p className="text-sm text-ink-muted">{book.author}</p>
               </Link>
-              {!isCurrent && meetingLabel ? (
-                <p className="mt-2 text-sm text-sage-dark">
-                  <span className="font-medium text-ink-muted">Incontro: </span>
-                  {meetingLabel}
-                </p>
+              {!isCurrent ? (
+                <div className="mt-3 rounded-xl border border-sage/35 bg-sage/10 px-3 py-2.5 sm:px-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    Data incontro — discussione del libro
+                  </p>
+                  <p
+                    className={
+                      meetingLabel
+                        ? "mt-1 font-display text-base font-semibold text-cocoa sm:text-lg"
+                        : "mt-1 text-sm text-ink-muted"
+                    }
+                  >
+                    {meetingLabel ?? "Non ancora fissata"}
+                  </p>
+                </div>
               ) : null}
               {!isCurrent && voteSummary ? (
                 voteSummary.count > 0 ? (
@@ -77,7 +87,7 @@ export function BookListCard({
               ) : null}
             </div>
             {isCurrent ? (
-              <span className="shrink-0 rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">
+              <span className="shrink-0 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-red-700">
                 Stiamo leggendo
               </span>
             ) : null}

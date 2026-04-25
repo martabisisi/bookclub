@@ -1,4 +1,5 @@
 import { StarDisplay } from "@/components/StarDisplay";
+import { formatMeetingDate } from "@/lib/formatMeetingDate";
 import type { Book, Profile, ReadingProgress } from "@/types/database";
 
 type MemberReadingStatusProps = {
@@ -26,9 +27,25 @@ export function MemberReadingStatus({
   ratingsByUserId,
 }: MemberReadingStatusProps) {
   const showVotes = Boolean(ratingsByUserId);
+  const meetingLabel = formatMeetingDate(book.meeting_date);
 
   return (
-    <ul className="mt-3 space-y-2 border-t border-card-border pt-3">
+    <div className="mt-3 space-y-3">
+      <div className="rounded-xl border border-sage/35 bg-sage/10 px-3 py-2.5 sm:px-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          Data incontro — discussione del libro
+        </p>
+        <p
+          className={
+            meetingLabel
+              ? "mt-1 font-display text-lg font-semibold text-cocoa sm:text-xl"
+              : "mt-1 text-sm text-ink-muted"
+          }
+        >
+          {meetingLabel ?? "Non ancora fissata"}
+        </p>
+      </div>
+      <ul className="space-y-2 border-t border-card-border pt-3">
       {profiles.map((prof) => {
         const prog = progressByUserId.get(prof.user_id);
         const status = labelFor(book, prog);
@@ -66,5 +83,6 @@ export function MemberReadingStatus({
         );
       })}
     </ul>
+    </div>
   );
 }
