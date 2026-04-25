@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { toDateInputValue } from "@/lib/toDateInputValue";
 import type { Book } from "@/types/database";
 
 export function EditBookPage() {
@@ -12,6 +13,7 @@ export function EditBookPage() {
   const [author, setAuthor] = useState("");
   const [totalPages, setTotalPages] = useState("");
   const [setAsCurrent, setSetAsCurrent] = useState(false);
+  const [meetingDate, setMeetingDate] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function EditBookPage() {
       setAuthor(data.author);
       setTotalPages(String(data.total_pages));
       setSetAsCurrent(data.is_current_book);
+      setMeetingDate(toDateInputValue(data.meeting_date));
     })();
   }, [id]);
 
@@ -68,6 +71,7 @@ export function EditBookPage() {
           author: author.trim(),
           total_pages: pages,
           is_current_book: setAsCurrent,
+          meeting_date: meetingDate || null,
         })
         .eq("id", id);
       if (updErr) throw updErr;
@@ -123,8 +127,8 @@ export function EditBookPage() {
           Modifica libro
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Solo l&apos;admin può aggiornare titolo, autore, pagine, copertina e
-          stato di &quot;libro corrente&quot;.
+          Solo l&apos;admin può aggiornare titolo, autore, pagine, copertina,
+          data incontro e stato di &quot;libro corrente&quot;.
         </p>
       </div>
 
@@ -172,6 +176,25 @@ export function EditBookPage() {
             onChange={(e) => setTotalPages(e.target.value)}
             required
             className="mt-1 w-full rounded-lg border border-card-border bg-parchment px-3 py-2 text-ink outline-none ring-sage focus:ring-2"
+          />
+        </div>
+        <div className="rounded-xl border-2 border-sage/40 bg-sage/5 p-4">
+          <h2 className="font-display text-base font-semibold text-ink">
+            Data incontro del club
+          </h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Quando vi incontrate per discutere questo libro. Opzionale: lascia
+            vuoto per toglierla.
+          </p>
+          <label htmlFor="meeting-edit" className="sr-only">
+            Data incontro (calendario)
+          </label>
+          <input
+            id="meeting-edit"
+            type="date"
+            value={meetingDate}
+            onChange={(e) => setMeetingDate(e.target.value)}
+            className="mt-3 w-full rounded-lg border border-card-border bg-parchment px-3 py-2.5 text-ink outline-none ring-sage focus:ring-2"
           />
         </div>
         <div>
