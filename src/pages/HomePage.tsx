@@ -239,7 +239,7 @@ export function HomePage({ isAdmin }: HomePageProps) {
                       )
                     ) : null}
                   </div>
-                  <span className="shrink-0 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-red-700">
+                  <span className="shrink-0 rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
                     Stiamo leggendo
                   </span>
                 </div>
